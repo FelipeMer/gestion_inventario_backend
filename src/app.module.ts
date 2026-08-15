@@ -29,9 +29,9 @@ import { SalesModule } from './modules/sales/sales.module';
     }),
     AuthModule,
     CatalogModule,
-    //InventoryModule,
-    //PurchasesModule,
-    //SalesModule,
+    InventoryModule,
+    PurchasesModule,
+    SalesModule,
   ],
 })
 export class AppModule {}

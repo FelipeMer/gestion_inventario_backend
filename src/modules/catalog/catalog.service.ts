@@ -8,6 +8,11 @@ import { Proveedor } from './entities/proveedor.entity';
 import { CreateProductDto } from './dto/create-producto.dto';
 import { UpdateProductDto } from './dto/update-producto.dto';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
+import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { CreateProveedorDto } from './dto/create-proveedor.dto';
+import { UpdateProveedorDto } from './dto/update-proveedor.dto';
 
 @Injectable()
 export class CatalogService {
@@ -40,13 +45,13 @@ export class CatalogService {
   }
 
   async findAllProducts(): Promise<Producto[]> {
-    return this.productoRepository.find({ relations: {'categoria': true} });
+    return this.productoRepository.find({ relations: { categoria: true } });
   }
 
   async findOneProduct(id: string): Promise<Producto> {
     const producto = await this.productoRepository.findOne({
       where: { id_producto: id },
-      relations: {'categoria': true},
+      relations: { categoria: true },
     });
     if (!producto) {
       throw new NotFoundException(`Producto ${id} no encontrado`);
@@ -79,9 +84,7 @@ export class CatalogService {
   // ---------- CATEGORÍAS ----------
 
   async createCategoria(dto: CreateCategoriaDto): Promise<Categoria> {
-    const categoria = this.categoriaRepository.create({
-        ...dto
-    });
+    const categoria = this.categoriaRepository.create(dto);
     return this.categoriaRepository.save(categoria);
   }
 
@@ -89,10 +92,32 @@ export class CatalogService {
     return this.categoriaRepository.find();
   }
 
+  async findOneCategoria(id: string): Promise<Categoria> {
+    const categoria = await this.categoriaRepository.findOneBy({
+      id_categoria: id,
+    });
+    if (!categoria) {
+      throw new NotFoundException(`Categoría ${id} no encontrada`);
+    }
+    return categoria;
+  }
+
+  async updateCategoria(id: string, dto: UpdateCategoriaDto): Promise<Categoria> {
+    const categoria = await this.findOneCategoria(id);
+    Object.assign(categoria, dto);
+    return this.categoriaRepository.save(categoria);
+  }
+
+  async removeCategoria(id: string): Promise<void> {
+    const categoria = await this.findOneCategoria(id);
+    categoria.estado = false;
+    await this.categoriaRepository.save(categoria);
+  }
+
   // ---------- CLIENTES ----------
 
-  async createCliente(data: Partial<Cliente>): Promise<Cliente> {
-    const cliente = this.clienteRepository.create(data);
+  async createCliente(dto: CreateClienteDto): Promise<Cliente> {
+    const cliente = this.clienteRepository.create(dto);
     return this.clienteRepository.save(cliente);
   }
 
@@ -100,14 +125,58 @@ export class CatalogService {
     return this.clienteRepository.find();
   }
 
+  async findOneCliente(id: string): Promise<Cliente> {
+    const cliente = await this.clienteRepository.findOneBy({
+      id_cliente: id,
+    });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente ${id} no encontrado`);
+    }
+    return cliente;
+  }
+
+  async updateCliente(id: string, dto: UpdateClienteDto): Promise<Cliente> {
+    const cliente = await this.findOneCliente(id);
+    Object.assign(cliente, dto);
+    return this.clienteRepository.save(cliente);
+  }
+
+  async removeCliente(id: string): Promise<void> {
+    const cliente = await this.findOneCliente(id);
+    cliente.estado = false;
+    await this.clienteRepository.save(cliente);
+  }
+
   // ---------- PROVEEDORES ----------
 
-  async createProveedor(data: Partial<Proveedor>): Promise<Proveedor> {
-    const proveedor = this.proveedorRepository.create(data);
+  async createProveedor(dto: CreateProveedorDto): Promise<Proveedor> {
+    const proveedor = this.proveedorRepository.create(dto);
     return this.proveedorRepository.save(proveedor);
   }
 
   async findAllProveedores(): Promise<Proveedor[]> {
     return this.proveedorRepository.find();
+  }
+
+  async findOneProveedor(id: string): Promise<Proveedor> {
+    const proveedor = await this.proveedorRepository.findOneBy({
+      id_proveedor: id,
+    });
+    if (!proveedor) {
+      throw new NotFoundException(`Proveedor ${id} no encontrado`);
+    }
+    return proveedor;
+  }
+
+  async updateProveedor(id: string, dto: UpdateProveedorDto): Promise<Proveedor> {
+    const proveedor = await this.findOneProveedor(id);
+    Object.assign(proveedor, dto);
+    return this.proveedorRepository.save(proveedor);
+  }
+
+  async removeProveedor(id: string): Promise<void> {
+    const proveedor = await this.findOneProveedor(id);
+    proveedor.estado = false;
+    await this.proveedorRepository.save(proveedor);
   }
 }

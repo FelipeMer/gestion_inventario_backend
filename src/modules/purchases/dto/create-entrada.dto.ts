@@ -8,12 +8,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateSalidaDetalleDto } from './create-salida-detalle.dto';
+import { CreateEntradaDetalleDto } from './create-entrada-detalle.dto';
 
-export class CreateSalidaDto {
+export class CreateEntradaDto {
   @IsUUID()
   @IsNotEmpty()
-  cliente_id!: string;
+  proveedor_id!: string;
 
   @IsUUID()
   @IsNotEmpty()
@@ -26,6 +26,6 @@ export class CreateSalidaDto {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => CreateSalidaDetalleDto)
-  detalles!: CreateSalidaDetalleDto[];
+  @Type(() => CreateEntradaDetalleDto)
+  detalles!: CreateEntradaDetalleDto[];
 }
