@@ -1,98 +1,232 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend - Sistema de Gestión de Inventarios (SGIA)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend desarrollado con **NestJS** + **PostgreSQL** + **TypeORM** para la app móvil de control y gestión de inventarios de un almacén de ropa deportiva.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Proyecto complementario al desarrollo Android (Room Database, offline-first) del curso de Computación Móvil - UNIMINUTO.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Requisitos previos
 
-## Project setup
+- Node.js 18+ y npm
+- PostgreSQL 14+ (local o vía Docker)
+- Cuenta/cliente para probar la API: Swagger UI (incluido), Postman o `curl`
+
+---
+
+## 🚀 Instalación
 
 ```bash
-$ npm install
+# Clonar el repositorio (o ubicarse en la carpeta del proyecto)
+cd gestion_inventario_backend
+
+# Instalar dependencias
+npm install
 ```
 
-## Compile and run the project
+### Dependencias clave del proyecto
+
+| Paquete | Uso |
+|---|---|
+| `@nestjs/typeorm`, `typeorm`, `pg` | ORM y driver de conexión a PostgreSQL |
+| `@nestjs/config` | Manejo de variables de entorno |
+| `class-validator`, `class-transformer` | Validación y transformación de DTOs |
+| `@nestjs/mapped-types` | `PartialType` para los DTOs de actualización |
+| `@nestjs/swagger` | Documentación interactiva de la API |
+| `bcrypt` | Hash de contraseñas |
+| `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt` | Autenticación (pendiente de completar) |
+
+---
+
+## ⚙️ Configuración
+
+Crea un archivo `.env` en la raíz del proyecto (basado en `.env.example`):
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=tu_password
+DB_NAME=inventario_db
+```
+
+### Levantar PostgreSQL con Docker (opcional)
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker run --name inventario-db \
+  -e POSTGRES_PASSWORD=tu_password \
+  -e POSTGRES_DB=inventario_db \
+  -p 5432:5432 \
+  -d postgres:16
 ```
 
-## Run tests
+> ⚠️ El proyecto usa `synchronize: true` en TypeORM, lo que crea/actualiza las tablas automáticamente a partir de las entidades. **Esto es solo para desarrollo.** Antes de producción, se debe migrar a `migrations` explícitas para evitar pérdida de datos.
+
+---
+
+## ▶️ Ejecutar el proyecto
 
 ```bash
-# unit tests
-$ npm run test
+# Modo desarrollo (con recarga automática)
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Modo producción
+npm run build
+npm run start:prod
 ```
 
-## Deployment
+El servidor queda disponible en `http://localhost:3000`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+La documentación interactiva de Swagger queda en `http://localhost:3000/api`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## 🗂️ Estructura del proyecto
+
+```
+src/
+├── common/                   # guards, interceptors, filters, pipes globales
+├── config/                   # configuración de base de datos y entorno
+├── modules/
+│   ├── auth/                 # usuarios, roles, autenticación
+│   │   ├── entities/         # usuario.entity.ts, rol.entity.ts
+│   │   └── dto/
+│   ├── catalog/               # productos, categorías, clientes, proveedores
+│   │   ├── entities/
+│   │   └── dto/
+│   ├── inventory/             # inventario, movimientos, tipos de movimiento (ledger)
+│   │   ├── entities/
+│   │   └── dto/
+│   ├── purchases/              # entradas (compras a proveedores)
+│   │   ├── entities/
+│   │   └── dto/
+│   └── sales/                  # salidas (ventas a clientes)
+│       ├── entities/
+│       └── dto/
+├── app.module.ts
+└── main.ts
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Principio de diseño: patrón de libro contable (ledger)
 
-## Resources
+El módulo `inventory` es el **único** punto de entrada para modificar el stock. Ni `Inventario`, ni `Movimiento`, ni `Referencia` se crean o editan directamente por el usuario vía endpoints propios — solo se generan como efecto de `InventoryService.registrarMovimiento()`, invocado desde:
 
-Check out a few resources that may come in handy when working with NestJS:
+- `PurchasesService.createEntrada()` → suma stock (tipo `ENTRADA`)
+- `SalesService.createSalida()` → resta stock (tipo `SALIDA`)
+- `InventoryService.crearAjuste()` → ajuste manual (tipo `AJUSTE`)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Esto garantiza trazabilidad completa: todo cambio de stock queda registrado en el historial de movimientos.
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 🔑 Datos semilla necesarios antes de probar
 
-## Stay in touch
+Estos registros deben crearse **una sola vez** antes de poder usar `purchases` y `sales`:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 1. Roles (vía SQL directo, no hay endpoint aún)
 
-## License
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto; -- si gen_random_uuid() no existe
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+INSERT INTO roles (id_rol, nombre, descripcion)
+VALUES (gen_random_uuid(), 'VENDEDOR', 'Usuario con acceso operativo');
+```
+
+### 2. Tipos de movimiento (vía Swagger/API)
+
+```http
+POST /inventory/tipos-movimiento
+{ "nombre": "ENTRADA", "signo": 1, "descripcion": "Compra a proveedor" }
+
+POST /inventory/tipos-movimiento
+{ "nombre": "SALIDA", "signo": -1, "descripcion": "Venta a cliente" }
+
+POST /inventory/tipos-movimiento
+{ "nombre": "AJUSTE", "signo": 1, "descripcion": "Ajuste manual de conteo físico" }
+```
+
+### 3. Usuario de prueba
+
+```http
+POST /auth/register
+{
+  "nombre": "Admin Prueba",
+  "email": "admin@test.com",
+  "password": "123456"
+}
+```
+
+---
+
+## 🧪 Flujo de pruebas end-to-end
+
+Con los datos semilla ya creados, sigue este orden (cada paso usa el `id` devuelto por el anterior):
+
+1. **Crear proveedor** — `POST /catalog/proveedores`
+2. **Crear cliente** — `POST /catalog/clientes`
+3. **Crear categoría** — `POST /catalog/categorias`
+4. **Crear producto** — `POST /catalog/productos` (usa el `id_categoria` del paso 3)
+5. **Registrar una entrada (compra)** — `POST /purchases/entradas`
+   ```json
+   {
+     "proveedor_id": "<id_proveedor>",
+     "usuario_id": "<id_usuario>",
+     "detalles": [
+       { "producto_id": "<id_producto>", "cantidad": 20, "precio_compra": 80000 }
+     ]
+   }
+   ```
+6. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 20`
+7. **Registrar una salida (venta)** — `POST /sales/salidas`
+   ```json
+   {
+     "cliente_id": "<id_cliente>",
+     "usuario_id": "<id_usuario>",
+     "detalles": [
+       { "producto_id": "<id_producto>", "cantidad": 5, "precio_venta": 150000 }
+     ]
+   }
+   ```
+8. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 15`
+9. **Probar rollback** — intenta una salida con `cantidad: 999` (más de lo disponible). Debe responder `400 Bad Request` y el stock **no** debe cambiar — confirma que la transacción se revirtió por completo.
+
+---
+
+## 📌 Endpoints principales
+
+| Módulo | Método | Ruta | Descripción |
+|---|---|---|---|
+| auth | POST | `/auth/register` | Crear usuario |
+| catalog | POST/GET/PATCH/DELETE | `/catalog/productos` | CRUD de productos |
+| catalog | POST/GET | `/catalog/categorias` | CRUD de categorías |
+| catalog | POST/GET | `/catalog/clientes` | CRUD de clientes |
+| catalog | POST/GET | `/catalog/proveedores` | CRUD de proveedores |
+| inventory | POST/GET | `/inventory/tipos-movimiento` | Tipos de movimiento (setup) |
+| inventory | GET | `/inventory` | Stock de todos los productos |
+| inventory | GET | `/inventory/:productoId` | Stock de un producto |
+| inventory | GET | `/inventory/movimientos/historial` | Historial de movimientos |
+| inventory | POST | `/inventory/ajustes/incremento` | Ajuste manual (+) |
+| inventory | POST | `/inventory/ajustes/decremento` | Ajuste manual (-) |
+| purchases | POST/GET | `/purchases/entradas` | Registrar/consultar compras |
+| sales | POST/GET | `/sales/salidas` | Registrar/consultar ventas |
+
+---
+
+## 🚧 Pendiente por implementar
+
+- [ ] `AuthService.login()` con JWT + `Guards` para proteger rutas
+- [ ] CRUD de `Rol` vía endpoints (actualmente se crea por SQL directo)
+- [ ] Migraciones de TypeORM (reemplazar `synchronize: true` antes de producción)
+- [ ] Tipos monetarios `NUMERIC` con precisión — validado en DTOs, revisar en reportes agregados
+- [ ] Tests unitarios y e2e
+
+---
+
+## 🛠️ Stack técnico
+
+- **Framework:** NestJS
+- **Base de datos:** PostgreSQL
+- **ORM:** TypeORM
+- **Validación:** class-validator / class-transformer
+- **Documentación API:** Swagger (OpenAPI)
+- **Autenticación:** JWT + bcrypt (en progreso)
