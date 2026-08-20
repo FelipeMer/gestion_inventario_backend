@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
+import { UseGuards, Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
 import { CreateTipoMovimientoDto } from './dto/create-tipo-movimiento.dto';
 import { CreateAjusteDto } from './dto/create-ajuste.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('inventory')
 @Controller('inventory')
+@UseGuards(JwtAuthGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 

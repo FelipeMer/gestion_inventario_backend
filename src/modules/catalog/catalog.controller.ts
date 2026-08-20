@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import { UseGuards, Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
 import { CreateProductDto } from './dto/create-producto.dto';
@@ -9,9 +9,11 @@ import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { CreateProveedorDto } from './dto/create-proveedor.dto';
 import { UpdateProveedorDto } from './dto/update-proveedor.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('catalog')
 @Controller('catalog')
+@UseGuards(JwtAuthGuard)
 export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 

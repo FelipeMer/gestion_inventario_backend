@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { UseGuards, Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { CreateSalidaDto } from './dto/create-salida.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('sales')
 @Controller('sales')
+@UseGuards(JwtAuthGuard)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 

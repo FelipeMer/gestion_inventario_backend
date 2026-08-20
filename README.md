@@ -1,26 +1,24 @@
-# Backend - Sistema de Gestión de Inventarios (SGIA)
+# Sistema de Gestión de Inventarios (SGIA)
 
-Backend desarrollado con **NestJS** + **PostgreSQL** + **TypeORM** para la app móvil de control y gestión de inventarios de un almacén de ropa deportiva.
+Proyecto full-stack para control y gestión de inventarios de un almacén de ropa deportiva, desarrollado como parte del curso de Computación Móvil - UNIMINUTO.
 
-Proyecto complementario al desarrollo Android (Room Database, offline-first) del curso de Computación Móvil - UNIMINUTO.
+- **Backend:** NestJS + PostgreSQL + TypeORM
+- **Frontend:** Android nativo (Java) con Room Database, offline-first y escaneo de código de barras (ML Kit)
 
 ---
+
+# 🖥️ Backend
 
 ## 📋 Requisitos previos
 
 - Node.js 18+ y npm
 - PostgreSQL 14+ (local o vía Docker)
-- Cuenta/cliente para probar la API: Swagger UI (incluido), Postman o `curl`
-
----
+- Cliente para probar la API: Swagger UI (incluido), Postman o `curl`
 
 ## 🚀 Instalación
 
 ```bash
-# Clonar el repositorio (o ubicarse en la carpeta del proyecto)
 cd gestion_inventario_backend
-
-# Instalar dependencias
 npm install
 ```
 
@@ -34,13 +32,11 @@ npm install
 | `@nestjs/mapped-types` | `PartialType` para los DTOs de actualización |
 | `@nestjs/swagger` | Documentación interactiva de la API |
 | `bcrypt` | Hash de contraseñas |
-| `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt` | Autenticación (pendiente de completar) |
-
----
+| `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt` | Autenticación con JWT |
 
 ## ⚙️ Configuración
 
-Crea un archivo `.env` en la raíz del proyecto (basado en `.env.example`):
+Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
 DB_HOST=localhost
@@ -48,6 +44,9 @@ DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=tu_password
 DB_NAME=inventario_db
+
+JWT_SECRET=una_clave_larga_y_dificil_de_adivinar_cambiala_en_produccion
+JWT_EXPIRES_IN=8h
 ```
 
 ### Levantar PostgreSQL con Docker (opcional)
@@ -62,8 +61,6 @@ docker run --name inventario-db \
 
 > ⚠️ El proyecto usa `synchronize: true` en TypeORM, lo que crea/actualiza las tablas automáticamente a partir de las entidades. **Esto es solo para desarrollo.** Antes de producción, se debe migrar a `migrations` explícitas para evitar pérdida de datos.
 
----
-
 ## ▶️ Ejecutar el proyecto
 
 ```bash
@@ -76,10 +73,7 @@ npm run start:prod
 ```
 
 El servidor queda disponible en `http://localhost:3000`.
-
-La documentación interactiva de Swagger queda en `http://localhost:3000/api`.
-
----
+Documentación interactiva de Swagger: `http://localhost:3000/api`.
 
 ## 🗂️ Estructura del proyecto
 
@@ -88,19 +82,21 @@ src/
 ├── common/                   # guards, interceptors, filters, pipes globales
 ├── config/                   # configuración de base de datos y entorno
 ├── modules/
-│   ├── auth/                 # usuarios, roles, autenticación
-│   │   ├── entities/         # usuario.entity.ts, rol.entity.ts
-│   │   └── dto/
-│   ├── catalog/               # productos, categorías, clientes, proveedores
+│   ├── auth/                  # usuarios, roles, autenticación JWT
+│   │   ├── entities/           # usuario.entity.ts, rol.entity.ts
+│   │   ├── strategies/          # jwt.strategy.ts
+│   │   ├── guards/               # jwt-auth.guard.ts
+│   │   └── dto/                   # register.dto.ts, login.dto.ts
+│   ├── catalog/                # productos, categorías, clientes, proveedores
 │   │   ├── entities/
 │   │   └── dto/
-│   ├── inventory/             # inventario, movimientos, tipos de movimiento (ledger)
+│   ├── inventory/               # inventario, movimientos, tipos de movimiento (ledger)
 │   │   ├── entities/
 │   │   └── dto/
-│   ├── purchases/              # entradas (compras a proveedores)
+│   ├── purchases/                # entradas (compras a proveedores)
 │   │   ├── entities/
 │   │   └── dto/
-│   └── sales/                  # salidas (ventas a clientes)
+│   └── sales/                     # salidas (ventas a clientes)
 │       ├── entities/
 │       └── dto/
 ├── app.module.ts
@@ -117,11 +113,14 @@ El módulo `inventory` es el **único** punto de entrada para modificar el stock
 
 Esto garantiza trazabilidad completa: todo cambio de stock queda registrado en el historial de movimientos.
 
----
+### Autenticación JWT
+
+- `POST /auth/register` crea el usuario (password hasheado con bcrypt).
+- `POST /auth/login` valida credenciales y devuelve `access_token` + datos del usuario.
+- `JwtStrategy` valida el token en cada request protegida, extrayéndolo del header `Authorization: Bearer <token>`.
+- `JwtAuthGuard` está disponible para proteger controllers (`@UseGuards(JwtAuthGuard)`), pero **aún no se ha aplicado a los módulos de negocio** (catalog, inventory, purchases, sales) — se activará una vez el frontend Android tenga el flujo de login probado de punta a punta.
 
 ## 🔑 Datos semilla necesarios antes de probar
-
-Estos registros deben crearse **una sola vez** antes de poder usar `purchases` y `sales`:
 
 ### 1. Roles (vía SQL directo, no hay endpoint aún)
 
@@ -156,17 +155,14 @@ POST /auth/register
 }
 ```
 
----
-
 ## 🧪 Flujo de pruebas end-to-end
 
-Con los datos semilla ya creados, sigue este orden (cada paso usa el `id` devuelto por el anterior):
-
-1. **Crear proveedor** — `POST /catalog/proveedores`
-2. **Crear cliente** — `POST /catalog/clientes`
-3. **Crear categoría** — `POST /catalog/categorias`
-4. **Crear producto** — `POST /catalog/productos` (usa el `id_categoria` del paso 3)
-5. **Registrar una entrada (compra)** — `POST /purchases/entradas`
+1. **Login** — `POST /auth/login` con el usuario de prueba → guarda el `access_token`
+2. **Crear proveedor** — `POST /catalog/proveedores`
+3. **Crear cliente** — `POST /catalog/clientes`
+4. **Crear categoría** — `POST /catalog/categorias`
+5. **Crear producto** — `POST /catalog/productos` (usa el `id_categoria` del paso 4)
+6. **Registrar una entrada (compra)** — `POST /purchases/entradas`
    ```json
    {
      "proveedor_id": "<id_proveedor>",
@@ -176,8 +172,8 @@ Con los datos semilla ya creados, sigue este orden (cada paso usa el `id` devuel
      ]
    }
    ```
-6. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 20`
-7. **Registrar una salida (venta)** — `POST /sales/salidas`
+7. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 20`
+8. **Registrar una salida (venta)** — `POST /sales/salidas`
    ```json
    {
      "cliente_id": "<id_cliente>",
@@ -187,16 +183,15 @@ Con los datos semilla ya creados, sigue este orden (cada paso usa el `id` devuel
      ]
    }
    ```
-8. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 15`
-9. **Probar rollback** — intenta una salida con `cantidad: 999` (más de lo disponible). Debe responder `400 Bad Request` y el stock **no** debe cambiar — confirma que la transacción se revirtió por completo.
-
----
+9. **Confirmar stock** — `GET /inventory/<id_producto>` → debe mostrar `cantidad: 15`
+10. **Probar rollback** — intenta una salida con `cantidad: 999` (más de lo disponible). Debe responder `400 Bad Request` y el stock **no** debe cambiar.
 
 ## 📌 Endpoints principales
 
 | Módulo | Método | Ruta | Descripción |
 |---|---|---|---|
 | auth | POST | `/auth/register` | Crear usuario |
+| auth | POST | `/auth/login` | Login, devuelve `access_token` |
 | catalog | POST/GET/PATCH/DELETE | `/catalog/productos` | CRUD de productos |
 | catalog | POST/GET | `/catalog/categorias` | CRUD de categorías |
 | catalog | POST/GET | `/catalog/clientes` | CRUD de clientes |
@@ -210,23 +205,135 @@ Con los datos semilla ya creados, sigue este orden (cada paso usa el `id` devuel
 | purchases | POST/GET | `/purchases/entradas` | Registrar/consultar compras |
 | sales | POST/GET | `/sales/salidas` | Registrar/consultar ventas |
 
----
+## 🚧 Pendiente por implementar (backend)
 
-## 🚧 Pendiente por implementar
-
-- [ ] `AuthService.login()` con JWT + `Guards` para proteger rutas
+- [ ] Aplicar `@UseGuards(JwtAuthGuard)` a catalog, inventory, purchases y sales
 - [ ] CRUD de `Rol` vía endpoints (actualmente se crea por SQL directo)
 - [ ] Migraciones de TypeORM (reemplazar `synchronize: true` antes de producción)
-- [ ] Tipos monetarios `NUMERIC` con precisión — validado en DTOs, revisar en reportes agregados
 - [ ] Tests unitarios y e2e
 
 ---
 
-## 🛠️ Stack técnico
+# 📱 Frontend (Android - Java)
 
-- **Framework:** NestJS
-- **Base de datos:** PostgreSQL
-- **ORM:** TypeORM
-- **Validación:** class-validator / class-transformer
-- **Documentación API:** Swagger (OpenAPI)
-- **Autenticación:** JWT + bcrypt (en progreso)
+## Stack técnico
+
+- **Lenguaje:** Java
+- **Arquitectura:** MVVM offline-first
+- **UI:** XML + View Binding, `Fragment` + Navigation Component, `BottomNavigationView` (Material 3)
+- **Red:** Retrofit + OkHttp (interceptor de logging + interceptor de JWT)
+- **Caché local:** Room
+- **Escaneo de productos:** ML Kit Barcode Scanning + CameraX
+- **Sesión:** `EncryptedSharedPreferences` para el JWT
+
+## Arquitectura de capas
+
+```
+UI (Fragment) → ViewModel (LiveData) → Repository → Remote (Retrofit) o Local (Room)
+```
+
+El `Repository` es el único que decide si los datos vienen del backend o del caché local, replicando offline-first el mismo principio de separación de capas usado en el backend (controller → service → entity).
+
+## 🗂️ Estructura de paquetes
+
+```
+app/src/main/java/com/codebyfelipe/appinventarios/
+├── MainActivity.java
+├── data/
+│   ├── local/                    # Room
+│   │   ├── entity/
+│   │   ├── dao/
+│   │   └── AppDatabase.java
+│   ├── remote/                   # Retrofit
+│   │   ├── ApiClient.java
+│   │   ├── ApiService.java
+│   │   ├── AuthInterceptor.java
+│   │   └── dto/
+│   └── repository/
+│       ├── AuthRepository.java
+│       ├── CatalogRepository.java
+│       ├── InventoryRepository.java
+│       ├── PurchasesRepository.java
+│       └── SalesRepository.java
+├── ui/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── catalog/
+│   │   ├── product/
+│   │   ├── category/
+│   │   ├── client/
+│   │   └── provider/
+│   ├── movements/
+│   │   ├── entrada/
+│   │   ├── salida/
+│   │   └── history/
+│   ├── profile/
+│   └── scanner/
+└── util/
+    ├── SessionManager.java        # guarda/lee el JWT cifrado
+    ├── Constants.java               # BASE_URL, claves de preferencias
+    ├── Resource.java                 # wrapper {LOADING, SUCCESS, ERROR}
+    └── NetworkUtils.java
+```
+
+## Navegación
+
+`Login` → `MainActivity` con `BottomNavigationView` de 4 pestañas:
+
+| Pestaña | Contenido |
+|---|---|
+| Dashboard | Resumen, alertas de stock bajo |
+| Catálogo | Productos, categorías, clientes, proveedores |
+| Movimientos | Registrar/consultar compras (entradas) y ventas (salidas) |
+| Perfil | Datos del usuario, cerrar sesión |
+
+## ⚙️ Configuración
+
+En `util/Constants.java`, ajustar `BASE_URL` según el entorno de prueba:
+
+```java
+// Emulador de Android Studio → apunta al localhost de la PC
+public static final String BASE_URL = "http://10.0.2.2:3000/";
+
+// Celular físico → IP local de la PC en la misma red Wi-Fi
+// public static final String BASE_URL = "http://192.168.1.X:3000/";
+```
+
+`AndroidManifest.xml` requiere:
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.CAMERA" />
+<application android:usesCleartextTraffic="true" ...>
+```
+> ⚠️ `usesCleartextTraffic="true"` es solo para desarrollo contra HTTP sin SSL — quitar antes de producción.
+
+## ✅ Progreso actual
+
+- [x] Estructura de paquetes creada
+- [x] `AndroidManifest.xml` configurado (permisos de red y cámara)
+- [x] `Constants.java` y `SessionManager.java` (sesión cifrada)
+- [x] `ApiClient.java`, `ApiService.java`, `AuthInterceptor.java`
+- [x] DTOs de `auth`: `LoginRequest`, `LoginResponse`, `RegisterRequest`, `Usuario`, `Rol`
+- [x] `AuthRepository.java` (login/register) + `Resource.java`
+- [ ] `LoginViewModel.java` + `LoginFragment.java` (siguiente paso)
+- [ ] `MainActivity.java` + `nav_graph.xml` + `bottom_nav_menu.xml`
+- [ ] DTOs y repositories de `catalog`, `inventory`, `purchases`, `sales`
+- [ ] Pantallas de catálogo (lista, detalle, formulario con escaneo)
+- [ ] Pantallas de movimientos (entrada/salida) con escaneo ML Kit
+- [ ] Room (entities, DAOs, `AppDatabase`) para el caché offline
+- [ ] Prueba end-to-end: login real desde la app contra el backend
+
+---
+
+## 🛠️ Stack técnico resumen
+
+| Capa | Tecnología |
+|---|---|
+| Backend | NestJS, PostgreSQL, TypeORM |
+| Validación | class-validator / class-transformer |
+| Documentación API | Swagger (OpenAPI) |
+| Autenticación | JWT + bcrypt |
+| Frontend | Android (Java), MVVM offline-first |
+| Red (Android) | Retrofit + OkHttp |
+| Caché local (Android) | Room |
+| Escaneo de productos | ML Kit + CameraX |
